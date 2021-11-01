@@ -1,0 +1,17 @@
+---
+wireguard_port: 53
+wireguard_server_interface_ip: 192.168.42.1
+wireguard_peer_cidr: 192.168.42.0/24
+
+## Wireguard Keys
+## Generated using wg genkey & wg genpsk
+wireguard_server_private_key: "{paste_key_here}"
+wireguard_server_public_key: "{paste_key_here}"
+wireguard_client_private_key: "{paste_key_here}"
+wireguard_client_public_key: "{paste_key_here}"
+
+wireguard_preshared_key: "{paste_key_here}"
+
+wireguard_service_enabled: yes
+
+wireguard_firewalld_config_enabled: yes

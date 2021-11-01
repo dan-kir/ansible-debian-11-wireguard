@@ -1,0 +1,61 @@
+---
+- name: Install Wireguard
+  ansible.builtin.package:
+    name:
+     - wireguard
+    state: present
+    update_cache: yes
+
+- name: Enable IPv4 packet forwarding in sysctl.conf
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_file: /etc/sysctl.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Start and enable firewalld
+  ansible.builtin.systemd:
+    name: firewalld.service
+    enabled: yes
+    state: started
+    masked: no
+  register: firewalld_service
+  when:
+    - wireguard_firewalld_config_enabled | bool
+
+- name: Firewalld Wireguard rule
+  ansible.posix.firewalld:
+    port: "{{ wireguard_port }}/udp"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  notify: Restart firewalld
+  when:
+    - firewalld_service is not skipped
+    - wireguard_firewalld_config_enabled | bool
+
+- name: Verify that Wireguard configuration directory exists
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  with_items:
+    - /etc/wireguard
+  check_mode: no
+
+- name: Copy wg0.conf
+  ansible.builtin.template:
+    src: templates/wg0.conf.j2
+    dest: "/etc/wireguard/wg0.conf"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Start and enable wireguard
+  ansible.builtin.systemd:
+    name: wg-quick@wg0
+    enabled: yes
+    state: started
+    masked: no
+  when:
+    - wireguard_service_enabled | bool
