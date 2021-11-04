@@ -1,4 +1,12 @@
 ---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- ansible.builtin.import_tasks: firewall.yml
+  when:
+    - wireguard_firewalld_config_enabled | bool
+
 - name: Install Wireguard
   ansible.builtin.package:
     name:
@@ -15,27 +23,6 @@
     state: present
     reload: yes
 
-- name: Start and enable firewalld
-  ansible.builtin.systemd:
-    name: firewalld.service
-    enabled: yes
-    state: started
-    masked: no
-  register: firewalld_service
-  when:
-    - wireguard_firewalld_config_enabled | bool
-
-- name: Firewalld Wireguard rule
-  ansible.posix.firewalld:
-    port: "{{ wireguard_port }}/udp"
-    permanent: yes
-    immediate: yes
-    state: enabled
-  notify: Restart firewalld
-  when:
-    - firewalld_service is not skipped
-    - wireguard_firewalld_config_enabled | bool
-
 - name: Verify that Wireguard configuration directory exists
   ansible.builtin.stat:
     path: "{{ item }}"
@@ -50,6 +37,8 @@
     owner: root
     group: root
     mode: 0600
+  notify:
+    - Restart wireguard
 
 - name: Start and enable wireguard
   ansible.builtin.systemd:

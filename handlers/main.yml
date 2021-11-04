@@ -1,0 +1,12 @@
+---
+- name: Restart firewalld
+  ansible.builtin.systemd:
+    name: firewalld.service
+    state: restarted
+
+- name: Restart wireguard
+  ansible.builtin.systemd:
+    name: wg-quick@wg0
+    state: restarted
+  when:
+    - wireguard_service_enabled | bool
